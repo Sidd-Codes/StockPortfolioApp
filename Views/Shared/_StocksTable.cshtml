@@ -1,0 +1,38 @@
+@model List<StockHoldingViewModel>
+
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Top Holdings</h5>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover stock-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Name</th>
+                        <th class="text-end">Shares</th>
+                        <th class="text-end">Last Price</th>
+                        <th class="text-end">Market Value</th>
+                        <th class="text-end">% of Portfolio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var holding in Model)
+                    {
+                        <tr>
+                            <td>@holding.Symbol</td>
+                            <td>@holding.Name</td>
+                            <td class="text-end">@holding.Shares</td>
+                            <td class="text-end">$@holding.LastPrice.ToString("N2")</td>
+                            <td class="text-end">$@holding.MarketValue.ToString("N2")</td>
+                            <td class="text-end">@holding.PercentageOfPortfolio.ToString("N2")%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

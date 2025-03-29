@@ -1,8 +1,110 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model DashboardViewModel
+@using StockPortfolioApp.Models.ViewModels
+@{
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="display-4">Your Investment Dashboard</h1>
+            <p class="lead text-muted">Comprehensive overview of your investment portfolio</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <i class="fas fa-wallet fa-2x text-primary"></i>
+                <div class="metric-value">$@Model.TotalPortfolioValue.ToString("N2")</div>
+                <div class="metric-title">Total Portfolio Value</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <i class="fas fa-chart-line fa-2x @(Model.DailyChange >= 0 ? "text-success" : "text-danger")"></i>
+                <div class="metric-value @(Model.DailyChange >= 0 ? "text-success" : "text-danger")">
+                    @(Model.DailyChange >= 0 ? "+" : "")$@Model.DailyChange.ToString("N2")
+                </div>
+                <div class="metric-title">Today's Change</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <i class="fas fa-percentage fa-2x @(Model.DailyChangePercentage >= 0 ? "text-success" : "text-danger")"></i>
+                <div class="metric-value @(Model.DailyChangePercentage >= 0 ? "text-success" : "text-danger")">
+                    @(Model.DailyChangePercentage >= 0 ? "+" : "")@Model.DailyChangePercentage.ToString("N2")%
+                </div>
+                <div class="metric-title">Total Return</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <i class="fas fa-briefcase fa-2x text-primary"></i>
+                <div class="metric-value">@Model.ActivePortfolios</div>
+                <div class="metric-title">Active Portfolios</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">Your Stock Holdings</h3>
+        </div>
+        @foreach (var holding in Model.TopHoldings)
+        {
+            <partial name="_StockMetricCard" model="new StockHoldingViewModel 
+            {
+                Symbol = holding.Symbol,
+                Name = holding.Name,
+                Shares = holding.Shares,
+                LastPrice = holding.LastPrice,
+                MarketValue = holding.MarketValue,
+                PercentageOfPortfolio = holding.PercentageOfPortfolio,
+                CostBasis = holding.Shares * holding.LastPrice
+            }" />
+        }
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Detailed Holdings</h5>
+                        <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover stock-table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Name</th>
+                                    <th class="text-end">Shares</th>
+                                    <th class="text-end">Last Price</th>
+                                    <th class="text-end">Market Value</th>
+                                    <th class="text-end">% of Portfolio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var holding in Model.TopHoldings)
+                                {
+                                    <tr>
+                                        <td>@holding.Symbol</td>
+                                        <td>@holding.Name</td>
+                                        <td class="text-end">@holding.Shares</td>
+                                        <td class="text-end">$@holding.LastPrice.ToString("N2")</td>
+                                        <td class="text-end">$@holding.MarketValue.ToString("N2")</td>
+                                        <td class="text-end">@holding.PercentageOfPortfolio.ToString("N2")%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
