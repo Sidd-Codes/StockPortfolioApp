@@ -1,0 +1,135 @@
+@using Microsoft.AspNetCore.Mvc
+@using Microsoft.AspNetCore.Mvc.ModelBinding
+@model PortfolioViewModel
+<div class="container">
+    <div class="portfolio-header">
+        <h1>Your Investment Portfolio</h1>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning" role="alert">
+            @TempData["WarningMessage"]
+        </div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" role="alert">
+            @foreach (var modelError in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div>@modelError.ErrorMessage</div>
+            }
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="add-stock-form mb-4">
+                <form asp-action="AddStock" method="post">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-4">
+                            <input type="text" name="tickerSymbol" class="form-control" placeholder="Stock Symbol" required />
+                        </div>
+                        <div class="col-md-4">
+                            <input type="number" name="shares" class="form-control" placeholder="Number of Shares" min="1" required />
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">Add Stock to Portfolio</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Stocks.Any())
+    {
+        <div class="alert alert-info text-center" role="alert">
+            Your portfolio is currently empty. Start by adding some stocks!
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Stock Symbol</th>
+                    <th class="text-end">Shares</th>
+                    <th class="text-end">Current Price</th>
+                    <th class="text-end">Last Updated</th>
+                    <th class="text-end">Market Value</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var stock in Model.Stocks.OrderBy(s => s.TickerSymbol))
+                {
+                    <tr>
+                        <td>@stock.TickerSymbol</td>
+                        <td class="text-end">@stock.Shares</td>
+                        <td class="text-end">$@stock.Price.ToString("N2")</td>
+                        <td class="text-end">
+                            @if (stock.PriceUpdatedAt.HasValue)
+                            {
+                                @stock.PriceUpdatedAt.Value.ToString("g")
+                            }
+                            else
+                            {
+                                <span class="text-muted">Never</span>
+                            }
+                        </td>
+                        <td class="text-end">$@((stock.Shares * stock.Price).ToString("N2"))</td>
+                        <td class="text-end" style="min-width: 200px;">
+                            <div class="d-flex align-items-center gap-1">
+                                <form asp-action="UpdateStock" method="post" class="d-inline">
+                                    <input type="hidden" name="stockId" value="@stock.StockId" />
+                                    <input type="number" name="newQuantity" class="form-control form-control-sm d-inline" style="width: 60px;" min="1" value="@stock.Shares" required />
+                                    <button type="submit" class="btn btn-primary btn-sm py-0">Update</button>
+                                </form>
+                                <form asp-action="RemoveStock" method="post" class="d-inline">
+                                    <input type="hidden" name="stockId" value="@stock.StockId" />
+                                    <input type="number" name="quantityToRemove" class="form-control form-control-sm d-inline" style="width: 60px;" min="1" max="@stock.Shares" required />
+                                    <button type="submit" class="btn btn-danger btn-sm py-0">Remove</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+    }
+
+    @if (Model.LastPriceUpdate.HasValue || TempData["LastPriceUpdate"] != null)
+    {
+        <div class="text-muted text-center mt-3">
+            @{
+                var lastUpdate = Model.LastPriceUpdate ?? DateTime.Parse(TempData["LastPriceUpdate"].ToString());
+            }
+            @if (Model.RateLimitHit)
+            {
+                <div>
+                    <i class="fas fa-clock"></i> Last price update attempt: @lastUpdate.ToLocalTime().ToString("dddd, MMMM d, h:mm tt") EST
+                    <div class="text-warning mt-2">
+                        <i class="fas fa-exclamation-triangle"></i> API rate limit reached. Using cached prices.
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <i class="fas fa-sync"></i> Prices updated as of @lastUpdate.ToLocalTime().ToString("dddd, MMMM d, h:mm tt") EST
+                </div>
+            }
+        </div>
+    }
+</div>

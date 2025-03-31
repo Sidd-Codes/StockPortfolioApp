@@ -1,0 +1,105 @@
+﻿@model DashboardViewModel
+@using StockPortfolioApp.Models.ViewModels
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="display-4">Your Investment Dashboard</h1>
+            <p class="lead text-muted">Comprehensive overview of your investment portfolio</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="metric-card">
+                <i class="fas fa-wallet fa-2x text-primary"></i>
+                <div class="metric-value">$@Model.TotalPortfolioValue.ToString("N2")</div>
+                <div class="metric-title">Total Portfolio Value</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">Your Stock Holdings</h3>
+        </div>
+        @foreach (var holding in Model.TopHoldings)
+        {
+            <partial name="_StockMetricCard" model="new StockHoldingViewModel 
+            {
+                Symbol = holding.Symbol,
+                Name = holding.Name,
+                Shares = holding.Shares,
+                LastPrice = holding.LastPrice,
+                MarketValue = holding.MarketValue,
+                PercentageOfPortfolio = holding.PercentageOfPortfolio,
+                CostBasis = holding.Shares * holding.LastPrice
+            }" />
+        }
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Detailed Holdings</h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover stock-table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Name</th>
+                                    <th class="text-end">Shares</th>
+                                    <th class="text-end">Last Price</th>
+                                    <th class="text-end">Market Value</th>
+                                    <th class="text-end">% of Portfolio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var holding in Model.TopHoldings)
+                                {
+                                    <tr>
+                                        <td>@holding.Symbol</td>
+                                        <td>@holding.Name</td>
+                                        <td class="text-end">@holding.Shares</td>
+                                        <td class="text-end">$@holding.LastPrice.ToString("N2")</td>
+                                        <td class="text-end">$@holding.MarketValue.ToString("N2")</td>
+                                        <td class="text-end">@holding.PercentageOfPortfolio.ToString("N2")%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.LastPriceUpdate.HasValue)
+    {
+        <div class="text-muted text-center mt-3">
+            @if (Model.RateLimitHit)
+            {
+                <div>
+                    <i class="fas fa-clock"></i> Last price update attempt: @Model.LastPriceUpdate.Value.ToLocalTime().ToString("dddd, MMMM d, h:mm tt") EST
+                    <div class="text-warning mt-2">
+                        <i class="fas fa-exclamation-triangle"></i> API rate limit reached. Using cached prices.
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <i class="fas fa-sync"></i> Prices updated as of @Model.LastPriceUpdate.Value.ToLocalTime().ToString("dddd, MMMM d, h:mm tt") EST
+                </div>
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,33 @@
+@model StockHoldingViewModel
+
+<div class="col-md-4 mb-4">
+    <div class="card stock-card">
+        <div class="card-body">
+            <h5 class="card-title">@Model.Symbol</h5>
+            <h6 class="card-subtitle mb-2 text-muted">@Model.Name</h6>
+            
+            <div class="stock-details">
+                <div class="detail-row">
+                    <span class="detail-label">Shares:</span>
+                    <span class="detail-value">@Model.Shares</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Last Price:</span>
+                    <span class="detail-value">$@Model.LastPrice.ToString("N2")</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Cost Basis:</span>
+                    <span class="detail-value">$@Model.CostBasis.ToString("N2")</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Market Value:</span>
+                    <span class="detail-value">$@Model.MarketValue.ToString("N2")</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">% of Portfolio:</span>
+                    <span class="detail-value">@Model.PercentageOfPortfolio.ToString("N2")%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
