@@ -101,7 +101,6 @@ public class HomeController : Controller
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, $"Failed to update price for {stock.TickerSymbol}, using existing price");
-                    // Keep existing price on error
                 }
 
                 var marketValue = stock.Shares * stock.Price;

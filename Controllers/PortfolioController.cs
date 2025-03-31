@@ -69,7 +69,6 @@ namespace StockPortfolioApp.Controllers
                     try
                     {
                         var currentPrice = await _stockPriceService.GetCurrentPriceAsync(stock.TickerSymbol);
-                        // If we hit rate limit or get an error, keep the existing price
                         if (currentPrice > 0)
                         {
                             stock.Price = currentPrice;
@@ -79,14 +78,13 @@ namespace StockPortfolioApp.Controllers
                         else if (currentPrice == -1)
                         {
                             _logger.LogWarning($"Rate limit hit for {stock.TickerSymbol}");
-                            anyPriceUpdated = true; // Set to true even for rate limit
+                            anyPriceUpdated = true;
                             rateLimitHit = true;
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, $"Failed to update price for {stock.TickerSymbol}, using existing price");
-                        // Keep existing price on error
                     }
                 }
                 if (anyPriceUpdated)
@@ -97,7 +95,6 @@ namespace StockPortfolioApp.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to update stock prices, using existing prices");
-                // Keep existing prices on error
             }
             return (anyPriceUpdated, rateLimitHit, lastUpdateTime);
         }
@@ -130,7 +127,6 @@ namespace StockPortfolioApp.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            // Update stock prices before creating the view model
             var (anyPriceUpdated, rateLimitHit, lastUpdateTime) = await UpdateStockPrices(portfolio);
 
             var viewModel = new PortfolioViewModel
@@ -168,7 +164,6 @@ namespace StockPortfolioApp.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Find the stock by stockId
             var stock = portfolio.Stocks.FirstOrDefault(s => s.StockId == stockId);
             
             if (stock == null)
@@ -183,10 +178,8 @@ namespace StockPortfolioApp.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Remove the specified quantity of shares
             stock.Shares -= quantityToRemove;
 
-            // If no shares are left, remove the stock from the portfolio
             if (stock.Shares == 0)
             {
                 _context.Stocks.Remove(stock);
