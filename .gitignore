@@ -1,0 +1,15 @@
+# Ignore environment files
+.env
+
+# Ignore configuration files
+appsettings.json
+appsettings.Development.json
+
+# Ignore build files
+bin/
+obj/
+
+# Ignore user-specific files
+*.user
+*.suo
+*.userosscache
