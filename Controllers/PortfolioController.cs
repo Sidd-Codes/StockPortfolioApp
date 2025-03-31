@@ -11,9 +11,11 @@ using System;
 using System.Collections.Generic;
 using StockPortfolioApp.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StockPortfolioApp.Controllers
 {
+    [Authorize]
     public class PortfolioController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -103,6 +105,11 @@ namespace StockPortfolioApp.Controllers
         // Modify the Index action to update prices on page load
         public async Task<IActionResult> Index()
         {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToPage("/Identity/Account/Login", new { returnUrl = Url.Action("Index", "Portfolio") });
+            }
+
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var portfolio = await _context.Portfolios
                 .Include(p => p.Stocks)
@@ -110,13 +117,14 @@ namespace StockPortfolioApp.Controllers
 
             if (portfolio == null)
             {
+                var user = await _userManager.GetUserAsync(User);
                 portfolio = new Portfolio
                 {
                     UserId = userId,
                     Name = "My Portfolio",
                     CreatedDate = DateTime.UtcNow,
                     Stocks = new List<Stock>(),
-                    User = await _context.Users.FindAsync(userId)
+                    User = user
                 };
                 _context.Portfolios.Add(portfolio);
                 await _context.SaveChangesAsync();

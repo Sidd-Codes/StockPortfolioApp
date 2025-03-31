@@ -12,6 +12,17 @@ namespace StockPortfolioApp.Services
             _tempData = tempData;
         }
 
+        public void AddNotification(string message, string type = "info")
+        {
+            _tempData["Notification"] = message;
+            _tempData["NotificationType"] = type;
+        }
+
+        public (string? message, string? type) GetNotification()
+        {
+            return (_tempData["Notification"]?.ToString(), _tempData["NotificationType"]?.ToString());
+        }
+
         public void SetWarningMessage(string message)
         {
             _tempData["WarningMessage"] = message;
