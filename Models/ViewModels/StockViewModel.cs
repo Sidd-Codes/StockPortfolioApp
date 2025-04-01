@@ -7,7 +7,6 @@ namespace StockPortfolioApp.Models
         public int Shares { get; set; }
         public decimal Price { get; set; }
         public decimal MarketValue => Shares * Price;
-        public DateTime? PriceUpdatedAt { get; set; }
 
     }
 

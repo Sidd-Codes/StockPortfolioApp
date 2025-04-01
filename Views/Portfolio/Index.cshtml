@@ -65,7 +65,6 @@
                     <th>Stock Symbol</th>
                     <th class="text-end">Shares</th>
                     <th class="text-end">Current Price</th>
-                    <th class="text-end">Last Updated</th>
                     <th class="text-end">Market Value</th>
                     <th class="text-end">Actions</th>
                 </tr>
@@ -77,16 +76,6 @@
                         <td>@stock.TickerSymbol</td>
                         <td class="text-end">@stock.Shares</td>
                         <td class="text-end">$@stock.Price.ToString("N2")</td>
-                        <td class="text-end">
-                            @if (stock.PriceUpdatedAt.HasValue)
-                            {
-                                @stock.PriceUpdatedAt.Value.ToString("g")
-                            }
-                            else
-                            {
-                                <span class="text-muted">Never</span>
-                            }
-                        </td>
                         <td class="text-end">$@((stock.Shares * stock.Price).ToString("N2"))</td>
                         <td class="text-end" style="min-width: 200px;">
                             <div class="d-flex align-items-center gap-1">

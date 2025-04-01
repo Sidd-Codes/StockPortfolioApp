@@ -69,6 +69,7 @@ namespace StockPortfolioApp.Controllers
                     try
                     {
                         var currentPrice = await _stockPriceService.GetCurrentPriceAsync(stock.TickerSymbol);
+                        // If we hit rate limit or get an error, keep the existing price
                         if (currentPrice > 0)
                         {
                             stock.Price = currentPrice;
@@ -78,13 +79,14 @@ namespace StockPortfolioApp.Controllers
                         else if (currentPrice == -1)
                         {
                             _logger.LogWarning($"Rate limit hit for {stock.TickerSymbol}");
-                            anyPriceUpdated = true;
+                            anyPriceUpdated = true; // Set to true even for rate limit
                             rateLimitHit = true;
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, $"Failed to update price for {stock.TickerSymbol}, using existing price");
+                        // Keep existing price on error
                     }
                 }
                 if (anyPriceUpdated)
@@ -95,6 +97,7 @@ namespace StockPortfolioApp.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to update stock prices, using existing prices");
+                // Keep existing prices on error
             }
             return (anyPriceUpdated, rateLimitHit, lastUpdateTime);
         }
@@ -143,7 +146,6 @@ namespace StockPortfolioApp.Controllers
                     TickerSymbol = s.TickerSymbol,
                     Shares = s.Shares,
                     Price = s.Price,
-                    PriceUpdatedAt = s.PriceUpdatedAt
                 }).ToList()
             };
 
