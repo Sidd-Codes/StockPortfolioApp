@@ -41,28 +41,37 @@ namespace StockPortfolioApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
-            ViewData["ReturnUrl"] = returnUrl;
-
-            if (ModelState.IsValid)
+            try
             {
-                var result = await _signInManager.PasswordSignInAsync(
-                    model.Email, 
-                    model.Password, 
-                    model.RememberMe, 
-                    lockoutOnFailure: true);
-
-                if (result.Succeeded)
+                returnUrl ??= Url.Content("~/");
+                ViewData["ReturnUrl"] = returnUrl;
+                _logger.LogInformation("returnUrl: " + returnUrl);
+            
+                if (ModelState.IsValid)
                 {
-                    _logger.LogInformation("User logged in.");
-                    return LocalRedirect(returnUrl);
-                }
+                    var result = await _signInManager.PasswordSignInAsync(
+                        model.Email, 
+                        model.Password, 
+                        model.RememberMe, 
+                        lockoutOnFailure: true);
 
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                    return View(model);
+                    if (result.Succeeded)
+                    {
+                        _logger.LogInformation("User logged in.");
+                        return LocalRedirect(returnUrl);
+                    }
+
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return View(model);
+                    }
                 }
+            }
+            catch(Exception ex)
+            {
+                _logger?.LogError(ex.ToString());
+                ModelState.AddModelError(string.Empty, "Invalid login attempt. Exception while login.");
             }
 
             return View(model);
