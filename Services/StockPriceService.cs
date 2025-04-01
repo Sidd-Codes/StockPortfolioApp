@@ -31,27 +31,24 @@ namespace StockPortfolioApp.Services
                 string url = $"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={_apiKey}";
 
                 var response = await _httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();  // This will throw an exception if the status code is not 2xx
+                response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation($"Alpha Vantage API response for {symbol}: {content}");
 
                 var data = JsonDocument.Parse(content);
 
-                // Check for error messages
                 if (data.RootElement.TryGetProperty("Error Message", out var errorMessage))
                 {
                     throw new Exception($"Alpha Vantage API error: {errorMessage.GetString()}");
                 }
 
-                // Check for rate limit note
                 if (data.RootElement.TryGetProperty("Note", out var note))
                 {
                     _logger.LogWarning($"Rate limit note for {symbol}: {note.GetString()}");
                     throw new Exception("API rate limit has been reached. Please try again later.");
                 }
 
-                // Check for missing price data
                 if (data.RootElement.TryGetProperty("Global Quote", out var globalQuote))
                 {
                     if (globalQuote.TryGetProperty("05. price", out var priceElement))
@@ -61,20 +58,18 @@ namespace StockPortfolioApp.Services
                     }
                     else
                     {
-                        // If price data is missing, throw an exception
                         throw new Exception($"Price information for symbol '{symbol}' not found.");
                     }
                 }
                 else
                 {
-                    // If "Global Quote" is missing, throw an exception
                     throw new Exception($"Error getting current price for '{symbol}'. Symbol may be invalid or API limit may be reached.");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error getting current price for {symbol}");
-                throw;  // Re-throw the exception so it can be caught in the controller
+                throw;
             }
         }
 
