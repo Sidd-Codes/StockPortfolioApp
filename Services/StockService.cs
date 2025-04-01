@@ -74,7 +74,7 @@ namespace StockPortfolioApp.Services
                     {
                         price = existingStockWithSymbol.Price;
                         priceTimestamp = existingStockWithSymbol.PriceUpdatedAt;
-                        _notificationService.SetWarningMessage($"Using last known price for {tickerSymbol} from {priceTimestamp?.ToString("g") ?? "unknown time"} due to API unavailability");
+                        _notificationService.SetWarningMessage($"Using last known price for {tickerSymbol} due to API unavailability");
                     }
                     else if (!_notificationService.GetWarningMessage().Contains("default price"))
                     {
@@ -83,7 +83,6 @@ namespace StockPortfolioApp.Services
                 }
                 else
                 {
-                    // If we got a new price from API, set current timestamp
                     priceTimestamp = DateTime.UtcNow;
                 }
                 
@@ -93,7 +92,7 @@ namespace StockPortfolioApp.Services
                 if (existingStock != null)
                 {
                     existingStock.Shares += shares;
-                    if (price > 0) // Only update price if we got a valid new price
+                    if (price > 0)
                     {
                         existingStock.Price = price;
                         existingStock.PriceUpdatedAt = priceTimestamp;
@@ -135,7 +134,6 @@ namespace StockPortfolioApp.Services
             
             stock.Shares = shares;
             
-            // Update price
             var currentPrice = await GetStockPriceAsync(stock.TickerSymbol);
             if (currentPrice > 0)
             {
@@ -201,7 +199,7 @@ namespace StockPortfolioApp.Services
                 else if (currentPrice == -1)
                 {
                     _logger.LogWarning($"Rate limit hit for {stock.TickerSymbol}");
-                    anyPriceUpdated = true; // Set to true even for rate limit
+                    anyPriceUpdated = true;
                 }
             }
             
