@@ -2,7 +2,6 @@
 .env
 
 # Ignore configuration files
-appsettings.json
 appsettings.Development.json
 
 # Ignore build files
