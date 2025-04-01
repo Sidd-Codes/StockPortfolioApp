@@ -73,7 +73,6 @@ public class HomeController : Controller
             var topHoldings = new List<StockHoldingViewModel>();
             bool anyPriceUpdated = false;
             bool rateLimitHit = false;
-            DateTime? lastUpdateTime = null;
 
             foreach (var stock in portfolio.Stocks)
             {
@@ -89,7 +88,6 @@ public class HomeController : Controller
                     {
                         stock.Price = price;
                         anyPriceUpdated = true;
-                        lastUpdateTime = DateTime.UtcNow;
                     }
                     else if (price == -1)
                     {
@@ -129,7 +127,6 @@ public class HomeController : Controller
             {
                 TotalPortfolioValue = totalPortfolioValue,
                 TopHoldings = topHoldings.OrderBy(h => h.Symbol).ToList(),
-                LastPriceUpdate = lastUpdateTime,
                 RateLimitHit = rateLimitHit
             };
 
