@@ -42,21 +42,22 @@ namespace StockPortfolioApp.Controllers
         public async Task<IActionResult> AddStock(string tickerSymbol, int shares)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
-            try 
+
+            try
             {
+                var currentPrice = await _stockPriceService.GetCurrentPriceAsync(tickerSymbol);
                 await _stockService.AddStockAsync(userId, tickerSymbol, shares);
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error adding stock");
-                ModelState.AddModelError(string.Empty, "An error occurred while adding the stock. Please try again.");
+                _logger.LogError(ex, $"Error adding stock {tickerSymbol}");
+                TempData["ErrorMessage"] = "Failed to add stock. " + ex.Message;
                 return RedirectToAction("Index");
             }
         }
 
-        // Method to refresh stock prices
+
         private async Task<(bool anyPriceUpdated, bool rateLimitHit, DateTime? lastUpdateTime)> UpdateStockPrices(Portfolio portfolio)
         {
             bool anyPriceUpdated = false;
@@ -69,7 +70,6 @@ namespace StockPortfolioApp.Controllers
                     try
                     {
                         var currentPrice = await _stockPriceService.GetCurrentPriceAsync(stock.TickerSymbol);
-                        // If we hit rate limit or get an error, keep the existing price
                         if (currentPrice > 0)
                         {
                             stock.Price = currentPrice;
@@ -79,14 +79,13 @@ namespace StockPortfolioApp.Controllers
                         else if (currentPrice == -1)
                         {
                             _logger.LogWarning($"Rate limit hit for {stock.TickerSymbol}");
-                            anyPriceUpdated = true; // Set to true even for rate limit
+                            anyPriceUpdated = true;
                             rateLimitHit = true;
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, $"Failed to update price for {stock.TickerSymbol}, using existing price");
-                        // Keep existing price on error
                     }
                 }
                 if (anyPriceUpdated)
@@ -97,12 +96,10 @@ namespace StockPortfolioApp.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to update stock prices, using existing prices");
-                // Keep existing prices on error
             }
             return (anyPriceUpdated, rateLimitHit, lastUpdateTime);
         }
 
-        // Modify the Index action to update prices on page load
         public async Task<IActionResult> Index()
         {
             if (!User.Identity.IsAuthenticated)

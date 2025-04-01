@@ -28,53 +28,79 @@ namespace StockPortfolioApp.Services
         {
             try
             {
-                // Use the "GLOBAL_QUOTE" endpoint for current price data
                 string url = $"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={_apiKey}";
-                
+
                 var response = await _httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-                
+                response.EnsureSuccessStatusCode();  // This will throw an exception if the status code is not 2xx
+
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation($"Alpha Vantage API response for {symbol}: {content}");
-                
+
                 var data = JsonDocument.Parse(content);
-                
-                // Check for API error messages
+
+                // Check for error messages
                 if (data.RootElement.TryGetProperty("Error Message", out var errorMessage))
                 {
                     throw new Exception($"Alpha Vantage API error: {errorMessage.GetString()}");
                 }
 
-                // Check for API note (rate limiting)
+                // Check for rate limit note
                 if (data.RootElement.TryGetProperty("Note", out var note))
                 {
                     _logger.LogWarning($"Rate limit note for {symbol}: {note.GetString()}");
-                    return -1; // Return -1 to indicate rate limit hit
+                    throw new Exception("API rate limit has been reached. Please try again later.");
                 }
 
-                // Extract the price from the response
-                var globalQuote = data.RootElement.GetProperty("Global Quote");
-                var price = decimal.Parse(globalQuote.GetProperty("05. price").GetString() ?? "0");
-                
-                return price;
+                // Check for missing price data
+                if (data.RootElement.TryGetProperty("Global Quote", out var globalQuote))
+                {
+                    if (globalQuote.TryGetProperty("05. price", out var priceElement))
+                    {
+                        var price = decimal.Parse(priceElement.GetString() ?? "0");
+                        return price;
+                    }
+                    else
+                    {
+                        // If price data is missing, throw an exception
+                        throw new Exception($"Price information for symbol '{symbol}' not found.");
+                    }
+                }
+                else
+                {
+                    // If "Global Quote" is missing, throw an exception
+                    throw new Exception($"Error getting current price for '{symbol}'. Symbol may be invalid or API limit may be reached.");
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error getting current price for {symbol}");
-                return 0;
+                throw;  // Re-throw the exception so it can be caught in the controller
             }
         }
 
-        public async Task<decimal> GetStockPriceAsync(string symbol)
-        {
-            // Alias for GetCurrentPriceAsync for backward compatibility
-            return await GetCurrentPriceAsync(symbol);
-        }
 
         public async Task<(decimal price, bool rateLimitHit)> GetCurrentPriceWithRateLimitAsync(string symbol)
         {
-            var price = await GetCurrentPriceAsync(symbol);
-            return (price, price == -1);
+            try
+            {
+                var price = await GetCurrentPriceAsync(symbol);
+                bool rateLimitHit = price == -1;
+                return (price, rateLimitHit);
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("rate limit"))
+                {
+                    _logger.LogWarning($"Rate limit hit while fetching price for symbol {symbol}");
+                }
+                else
+                {
+                    _logger.LogError($"Failed to fetch price for symbol {symbol}: {ex.Message}");
+                }
+
+                throw new Exception($"Error retrieving price for {symbol}: {ex.Message}");
+            }
         }
+
     }
 }
