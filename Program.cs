@@ -28,6 +28,10 @@ builder.Logging.AddDebug();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// If using purely deployed version, utilize code below to access connection string via Azure instead:
+// builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//     options.UseSqlServer(Environment.GetEnvironmentVariable("stocksdb"))); 
+
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.Password.RequireDigit = true;
