@@ -32,9 +32,31 @@ namespace StockPortfolioApp.Services
             _portfolioService = portfolioService;
         }
 
-        private async Task<decimal> GetStockPriceAsync(string symbol)
+        private async Task<(decimal price, bool isRateLimited)> GetStockPriceAsync(string symbol)
         {
-            return await _stockPriceService.GetCurrentPriceAsync(symbol);
+            try
+            {
+                var result = await _stockPriceService.GetCurrentPriceWithRateLimitAsync(symbol);
+                
+                if (result.rateLimitHit)
+                {
+                    _notificationService.SetWarningMessage($"Using cached or default price for {symbol} due to API limitations");
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected error getting price for {symbol}");
+                
+                var existingStock = await _context.Stocks
+                    .FirstOrDefaultAsync(s => s.TickerSymbol.ToUpper() == symbol.ToUpper());
+                
+                decimal price = existingStock?.Price ?? 1.00m;
+                _notificationService.SetWarningMessage($"Using fallback price for {symbol} due to unexpected error");
+                
+                return (price, true);
+            }
         }
 
         public async Task<IEnumerable<Stock>> GetStocksForUserAsync(string userId)
@@ -61,30 +83,14 @@ namespace StockPortfolioApp.Services
             try
             {
                 var portfolio = await _portfolioService.GetOrCreatePortfolioAsync(userId);
-                var price = await GetStockPriceAsync(tickerSymbol);
-                DateTime? priceTimestamp = null;
                 
-                // If API call failed (price <= 0), try to get last known price from database
-                if (price <= 0)
-                {
-                    var existingStockWithSymbol = await _context.Stocks
-                        .FirstOrDefaultAsync(s => s.TickerSymbol.ToUpper() == tickerSymbol.ToUpper());
-                    
-                    if (existingStockWithSymbol != null)
-                    {
-                        price = existingStockWithSymbol.Price;
-                        priceTimestamp = existingStockWithSymbol.PriceUpdatedAt;
-                        _notificationService.SetWarningMessage($"Using last known price for {tickerSymbol} due to API unavailability");
-                    }
-                    else if (!_notificationService.GetWarningMessage().Contains("default price"))
-                    {
-                        throw new Exception($"Could not retrieve valid price for {tickerSymbol} and no historical price available");
-                    }
-                }
-                else
-                {
-                    priceTimestamp = DateTime.UtcNow;
-                }
+                var priceResult = await GetStockPriceAsync(tickerSymbol);
+                var price = priceResult.price;
+                var isRateLimited = priceResult.isRateLimited;
+                
+                DateTime priceTimestamp = isRateLimited ? 
+                    DateTime.UtcNow.AddDays(-1) :   
+                    DateTime.UtcNow;
                 
                 var existingStock = portfolio.Stocks
                     .FirstOrDefault(s => s.TickerSymbol.ToUpper() == tickerSymbol.ToUpper());
@@ -92,11 +98,13 @@ namespace StockPortfolioApp.Services
                 if (existingStock != null)
                 {
                     existingStock.Shares += shares;
-                    if (price > 0)
+                    
+                    if (!isRateLimited)
                     {
                         existingStock.Price = price;
                         existingStock.PriceUpdatedAt = priceTimestamp;
                     }
+                    
                     await _context.SaveChangesAsync();
                     return existingStock;
                 }
@@ -134,10 +142,19 @@ namespace StockPortfolioApp.Services
             
             stock.Shares = shares;
             
-            var currentPrice = await GetStockPriceAsync(stock.TickerSymbol);
-            if (currentPrice > 0)
+            try
             {
-                stock.Price = currentPrice;
+                var priceResult = await GetStockPriceAsync(stock.TickerSymbol);
+                
+                if (!priceResult.isRateLimited)
+                {
+                    stock.Price = priceResult.price;
+                    stock.PriceUpdatedAt = DateTime.UtcNow;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected error updating price for {stock.TickerSymbol}");
             }
             
             await _context.SaveChangesAsync();
@@ -187,25 +204,32 @@ namespace StockPortfolioApp.Services
         {
             var portfolio = await GetOrCreatePortfolioAsync(userId);
             bool anyPriceUpdated = false;
+            int rateLimitedCount = 0;
             
             foreach (var stock in portfolio.Stocks)
             {
-                var currentPrice = await GetStockPriceAsync(stock.TickerSymbol);
-                if (currentPrice > 0)
+                var priceResult = await GetStockPriceAsync(stock.TickerSymbol);
+                
+                if (!priceResult.isRateLimited)
                 {
-                    stock.Price = currentPrice;
+                    stock.Price = priceResult.price;
+                    stock.PriceUpdatedAt = DateTime.UtcNow;
                     anyPriceUpdated = true;
                 }
-                else if (currentPrice == -1)
+                else
                 {
-                    _logger.LogWarning($"Rate limit hit for {stock.TickerSymbol}");
-                    anyPriceUpdated = true;
+                    rateLimitedCount++;
                 }
             }
             
             if (anyPriceUpdated)
             {
                 await _context.SaveChangesAsync();
+            }
+            
+            if (rateLimitedCount > 0)
+            {
+                _notificationService.SetWarningMessage($"{rateLimitedCount} stock prices could not be updated due to API limitations");
             }
         }
 
