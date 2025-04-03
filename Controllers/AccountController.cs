@@ -26,6 +26,7 @@ namespace StockPortfolioApp.Controllers
 
         [HttpGet]
         [AllowAnonymous]
+        //Triggered when user accesses login page and makes sure user is logged out when accessing login page
         public IActionResult Login(string returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
@@ -39,6 +40,7 @@ namespace StockPortfolioApp.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
+        //Triggered when user logs in and checks credentials, adds any errors to model state
         public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
         {
             try
@@ -78,6 +80,7 @@ namespace StockPortfolioApp.Controllers
         }
 
         [HttpGet]
+        //Triggered when user tries to access manage page, transfers info to AccountManageViewModel
         public IActionResult Manage()
         {
             if (!User.Identity.IsAuthenticated)

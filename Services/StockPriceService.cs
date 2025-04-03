@@ -31,7 +31,7 @@ namespace StockPortfolioApp.Services
             _context = context;
             _apiKey = configuration["AlphaVantage:ApiKey"] ?? throw new ArgumentNullException("Alpha Vantage API key is missing in configuration");
         }
-
+        //Fetches current price via the API
         public async Task<decimal> GetCurrentPriceAsync(string symbol)
         {
             try
@@ -83,7 +83,7 @@ namespace StockPortfolioApp.Services
                 return await GetLastKnownPriceAsync(symbol);
             }
         }
-
+        //Retrieves last known price
         private async Task<decimal> GetLastKnownPriceAsync(string symbol)
         {
             try
@@ -106,7 +106,7 @@ namespace StockPortfolioApp.Services
                 return 1.00m;
             }
         }
-
+        //Retrieves price with flag that ntofiies whether rate limit is hit 
         public async Task<(decimal price, bool rateLimitHit)> GetCurrentPriceWithRateLimitAsync(string symbol)
         {
             try

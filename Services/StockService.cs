@@ -31,7 +31,7 @@ namespace StockPortfolioApp.Services
             _notificationService = notificationService;
             _portfolioService = portfolioService;
         }
-
+        //Retrieves price of stock by calling IStockPriceService
         private async Task<(decimal price, bool isRateLimited)> GetStockPriceAsync(string symbol)
         {
             try
@@ -58,7 +58,7 @@ namespace StockPortfolioApp.Services
                 return (price, true);
             }
         }
-
+        //Retrieves stocks from a user's portfolio
         public async Task<IEnumerable<Stock>> GetStocksForUserAsync(string userId)
         {
             try
@@ -71,13 +71,12 @@ namespace StockPortfolioApp.Services
                 _logger.LogError(ex, $"Error retrieving stocks for user {userId}");
                 return new List<Stock>();
             }
-        }
-
+        }  
         public async Task<Stock> GetStockByIdAsync(int stockId)
         {
             return await _context.Stocks.FindAsync(stockId);
         }
-
+        //Adds a stock to user's portfolio
         public async Task<Stock> AddStockAsync(string userId, string tickerSymbol, int shares)
         {
             try
@@ -131,7 +130,7 @@ namespace StockPortfolioApp.Services
                 throw;
             }
         }
-
+        //Updates share count for existing stock
         public async Task UpdateStockAsync(int stockId, int shares)
         {
             var stock = await _context.Stocks.FindAsync(stockId);
@@ -160,18 +159,6 @@ namespace StockPortfolioApp.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task RemoveStockAsync(int stockId)
-        {
-            var stock = await GetStockByIdAsync(stockId);
-            if (stock == null)
-            {
-                throw new KeyNotFoundException($"Stock with ID {stockId} not found");
-            }
-
-            _context.Stocks.Remove(stock);
-            await _context.SaveChangesAsync();
-        }
-
         public async Task RemoveStockQuantityAsync(int stockId, int quantityToRemove)
         {
             var stock = await GetStockByIdAsync(stockId);
@@ -193,13 +180,13 @@ namespace StockPortfolioApp.Services
 
             await _context.SaveChangesAsync();
         }
-
+        //Gets total portfolio value
         public async Task<decimal> GetPortfolioValueAsync(string userId)
         {
             var portfolio = await GetOrCreatePortfolioAsync(userId);
             return portfolio.Stocks.Sum(s => s.Shares * s.Price);
         }
-
+        //Calls GetStockPriceAsync to refresh stock prices
         public async Task RefreshStockPricesAsync(string userId)
         {
             var portfolio = await GetOrCreatePortfolioAsync(userId);
@@ -232,7 +219,7 @@ namespace StockPortfolioApp.Services
                 _notificationService.SetWarningMessage($"{rateLimitedCount} stock prices could not be updated due to API limitations");
             }
         }
-
+        //Creates a portfolio for a user if it doesn't exist
         private async Task<Portfolio> GetOrCreatePortfolioAsync(string userId)
         {
             var portfolio = await _context.Portfolios

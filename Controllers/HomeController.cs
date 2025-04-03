@@ -48,7 +48,7 @@ public class HomeController : Controller
         _stockPriceService = stockPriceService;
         _logger = logger;
     }
-
+    //Handles logic for displaying dashboard view, such as retreiving user's portfolio, updating stock prices, and callculating total portfolio value
     public async Task<IActionResult> Index()
     {
         try 

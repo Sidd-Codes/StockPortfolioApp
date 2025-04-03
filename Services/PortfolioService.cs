@@ -22,7 +22,7 @@ namespace StockPortfolioApp.Services
             _stockPriceService = stockPriceService;
             _logger = logger;
         }
-
+        //Checks if a portfolio exists for a user otherwise it creates a new one and saves it to the database
         public async Task<Portfolio> GetOrCreatePortfolioAsync(string userId)
         {
             var portfolio = await GetPortfolioAsync(userId);
@@ -41,20 +41,20 @@ namespace StockPortfolioApp.Services
             }
             return portfolio;
         }
-
+        //Retrieves the portfolio of a user from the database
         public async Task<Portfolio> GetPortfolioAsync(string userId)
         {
             return await _context.Portfolios
                 .Include(p => p.Stocks)
                 .FirstOrDefaultAsync(p => p.UserId == userId);
         }
-
+        //Calculates and returns the total value of a user's portfolio 
         public async Task<decimal> GetPortfolioValueAsync(string userId)
         {
             var portfolio = await GetPortfolioAsync(userId);
             return portfolio?.Stocks.Sum(s => s.Shares * s.Price) ?? 0;
         }
-
+        //Updates stock price by fetching latest price for each stock
         public async Task<(bool anyPriceUpdated, bool rateLimitHit, DateTime? lastUpdateTime)> UpdatePortfolioPricesAsync(string userId)
         {
             var portfolio = await GetPortfolioAsync(userId);

@@ -37,7 +37,7 @@ namespace StockPortfolioApp.Controllers
             _logger = logger;
         }
 
-        // GET: Portfolio/Index
+        //Adds a new stock to user's portfolio and redirects to Index if successful
         [HttpPost]
         public async Task<IActionResult> AddStock(string tickerSymbol, int shares)
         {
@@ -57,7 +57,7 @@ namespace StockPortfolioApp.Controllers
             }
         }
 
-
+        //Updates prices of all stocks in a portofolio
         private async Task<(bool anyPriceUpdated, bool rateLimitHit, DateTime? lastUpdateTime)> UpdateStockPrices(Portfolio portfolio)
         {
             bool anyPriceUpdated = false;
@@ -99,7 +99,7 @@ namespace StockPortfolioApp.Controllers
             }
             return (anyPriceUpdated, rateLimitHit, lastUpdateTime);
         }
-
+        //Serves the dashboard of the user's portfolio
         public async Task<IActionResult> Index()
         {
             if (!User.Identity.IsAuthenticated)
@@ -149,7 +149,7 @@ namespace StockPortfolioApp.Controllers
             return View(viewModel);
         }
 
-        // GET: Portfolio/RemoveStock/{stockId}
+        //Removes stock
         public async Task<IActionResult> RemoveStock(int stockId, int quantityToRemove)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -189,7 +189,7 @@ namespace StockPortfolioApp.Controllers
             return RedirectToAction("Index");
         }
 
-        // POST: Portfolio/UpdateStock/{stockId}
+        //Updates stock quantity
         [HttpPost]
         public async Task<IActionResult> UpdateStock(int stockId, int newQuantity)
         {
@@ -206,7 +206,7 @@ namespace StockPortfolioApp.Controllers
             }
         }
 
-        // Utility method to ensure the portfolio exists
+        //Utility method to ensure the portfolio exists
         private async Task<Portfolio> EnsurePortfolioExists(string userId)
         {
             var portfolio = await _context.Portfolios
